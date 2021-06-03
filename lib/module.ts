@@ -13,7 +13,7 @@ export interface SSRError {
 
 export interface SSRProps {
   readonly config?: { isLoaded: boolean }
-  readonly err?: SSRError
+  err?: SSRError
 }
 
 export interface SSRAppProps<T = {}> extends AppProps<T & SSRProps> {
@@ -29,23 +29,35 @@ export function withServerSideProps<
   TPageProps extends { [key: string]: any } = {}
 >(
   getServerSidePropsCallback: GetServerSidePropsCallback<TPageProps>
-): GetServerSideProps<TPageProps & SSRProps> {
+): GetServerSideProps<(TPageProps & SSRProps) | SSRProps> {
   return async (ctx) => {
-    // do global stuff
-    const globalProps: SSRProps = { config: { isLoaded: true } }
+    try {
+      // do global stuff
+      const globalProps: SSRProps = { config: { isLoaded: true } }
 
-    // do page stuff
-    const { props: pageProps } = await getServerSidePropsCallback({
-      props: globalProps,
-      ...ctx,
-    })
+      // do page stuff
+      const { props: pageProps } = await getServerSidePropsCallback({
+        props: globalProps,
+        ...ctx,
+      })
 
-    // return all props
-    return {
-      props: {
-        ...globalProps,
-        ...pageProps,
-      },
+      // return all props together
+      return {
+        props: {
+          ...globalProps,
+          ...pageProps,
+        },
+      }
+    } catch (err) {
+      // catch errors here!
+      return {
+        props: {
+          err: {
+            code: err.response?.data?.error?.code ?? 'unknown_error',
+            status: err.response?.status ?? 500,
+          },
+        },
+      }
     }
   }
 }
