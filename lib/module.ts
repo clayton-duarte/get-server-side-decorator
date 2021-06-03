@@ -13,7 +13,7 @@ export interface SSRError {
 
 export interface SSRProps {
   readonly config?: { isLoaded: boolean }
-  readonly err?: SSRError
+  err?: SSRError
 }
 
 export interface SSRAppProps<T = {}> extends AppProps<T & SSRProps> {
